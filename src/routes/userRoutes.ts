@@ -23,11 +23,10 @@ router.post('/', async (req,res) => {
     } catch (e) {
         res.status(400).json({ error: "Username and email should be unique" });
     }
-
 });
 
 // List users
-router.get('/:id', async (req,res) => {
+router.get('/', async (req,res) => {
     const allUser = await prisma.user.findMany();
 
     res.json(allUser);
