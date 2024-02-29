@@ -33,6 +33,9 @@ router.post('/', async (req,res) => {
 // List tweets
 router.get('/', async (req,res) => {
     const allTweets = await prisma.tweet.findMany({ 
+        orderBy: {
+            createdAt: 'desc', // This line orders tweets by creation time, newest first
+        },
         include: { 
             user: { 
                 select: { 
