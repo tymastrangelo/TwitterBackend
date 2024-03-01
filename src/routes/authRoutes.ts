@@ -28,12 +28,6 @@ function generateAuthToken(tokenId: number): string {
 // generate the emailToken and send it to their email
 router.post('/login', async (req, res) => {
   const {email} = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-
-  if (user && !user.username) {
-    // User exists but doesn't have a username
-    return res.status(400).json({ error: "Username required" });
-  }
 
   // generate token
   const emailToken = generateEmailToken();
