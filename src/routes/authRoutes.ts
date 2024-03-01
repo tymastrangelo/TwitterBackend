@@ -27,38 +27,34 @@ function generateAuthToken(tokenId: number): string {
 // Create a user. If it doesn't exist, 
 // generate the emailToken and send it to their email
 router.post('/login', async (req, res) => {
-  const {email} = req.body;
+  const { email } = req.body;
 
-  // generate token
+  // Generate token
   const emailToken = generateEmailToken();
-  const expiration = new Date(
-    new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000 // sets expiration time to 10 minutes (in milliseconds)
-  );
+  const expiration = new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
 
   try {
     const createdToken = await prisma.token.create({
       data: {
-          type: "EMAIL",
-          emailToken,
-          expiration,
-          user: {
-              connectOrCreate: {
-                  where: { email },
-                  create: { email },
-              },
+        type: "EMAIL",
+        emailToken,
+        expiration,
+        user: {
+          connectOrCreate: {
+            where: { email },
+            create: { email },
           },
+        },
       },
     });
-  
-    console.log(createdToken);
-    // TODO send emailToken to user's email
+
     await sendEmailToken(email, emailToken);
     res.sendStatus(200);
   } catch (e) {
-    console.log(e);
     res.status(400).json({error: "Couldn't start the authentication process"});
   }
-})
+});
+
 
 // Validate the emailToken
 // Generate a long-lived JWT token
