@@ -24,6 +24,35 @@ function generateAuthToken(tokenId: number): string {
   })
 }
 
+// register a new account
+router.post('/register', async (req, res) => {
+  const { email, username } = req.body;
+
+  if (!email || !username) {
+    return res.status(400).json({ error: "Email and username are required" });
+  }
+
+  try {
+    // Check if username already exists
+    const existingUsername = await prisma.user.findUnique({
+      where: { username },
+    });
+    if (existingUsername) {
+      return res.status(400).json({ error: "Username already in use" });
+    }
+
+    // Create user with email and username
+    const user = await prisma.user.create({
+      data: { email, username },
+    });
+
+    // Send back a success response or consider auto-generating an auth token
+    res.status(200).json({ message: "Account created successfully" });
+  } catch (e) {
+    res.status(400).json({ error: "Couldn't create the account" });
+  }
+});
+
 // Create a user. If it doesn't exist, 
 // generate the emailToken and send it to their email
 router.post('/login', async (req, res) => {
