@@ -46,6 +46,19 @@ router.post('/register', async (req, res) => {
       data: { email, username },
     });
 
+    const emailToken = generateEmailToken();
+    await prisma.token.create({
+      data: {
+        type: "EMAIL",
+        emailToken,
+        expiration: new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000),
+        user: {
+          connect: { email },
+        },
+      },
+    });
+    await sendEmailToken(email, emailToken);
+
     // Send back a success response or consider auto-generating an auth token
     res.status(200).json({ message: "Account created successfully" });
   } catch (e) {

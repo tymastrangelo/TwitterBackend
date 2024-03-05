@@ -74,16 +74,4 @@ router.delete('/:id', async (req,res) => {
     res.sendStatus(200)
 });
 
-router.delete('/me', authenticatieToken, async (req, res) => {
-    const userId = req.user.id; // Extracted by your auth middleware from the token
-    try {
-        await prisma.user.delete({
-            where: { id: userId },
-        });
-        res.status(200).json({ message: "User deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ error: "Failed to delete user" });
-    }
-});
-
 export default router;
