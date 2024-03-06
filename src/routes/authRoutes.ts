@@ -26,10 +26,10 @@ function generateAuthToken(tokenId: number): string {
 
 // register a new account
 router.post('/register', async (req, res) => {
-  const { email, username } = req.body;
+  const { email, username, name } = req.body;
 
-  if (!email || !username) {
-    return res.status(400).json({ error: "Email and username are required" });
+  if (!email || !username || !name) {
+    return res.status(400).json({ error: "Email, username, and name are required" });
   }
 
   try {
@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
 
     // Create user with email and username
     const user = await prisma.user.create({
-      data: { email, username },
+      data: { email, username, name },
     });
 
     const emailToken = generateEmailToken();
