@@ -74,13 +74,4 @@ router.delete('/:id', async (req,res) => {
     res.sendStatus(200)
 });
 
-router.get('/me', authenticatieToken, async (req, res) => {
-    // Assuming req.user is set by the authentication middleware to contain the user's database record
-    const user = req.user; // Or fetch from the database based on req.user.id or similar
-    if (!user) {
-        return res.status(404).json({ error: "User not found" });
-    }
-    res.json({ email: user.email, name: user.name, username: user.username, bio: user.bio });
-});
-
 export default router;
