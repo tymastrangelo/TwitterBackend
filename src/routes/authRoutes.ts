@@ -93,6 +93,7 @@ router.post('/login', async (req, res) => {
     await sendEmailToken(email, emailToken);
     res.sendStatus(200);
   } catch (e) {
+    console.error("Error during authentication process:", e);
     res.status(400).json({error: "Couldn't start the authentication process"});
   }
 });
