@@ -6,12 +6,8 @@ import { authenticatieToken } from './middlewares/authMiddleware';
 
 const app = express();
 app.use(express.json());
-// app.use('/user', authenticatieToken, userRoutes);
-// app.use('/tweet', authenticatieToken, tweetRoutes);
-// app.use('/auth', authRoutes);
-
-app.use('/user', userRoutes);
-app.use('/tweet', tweetRoutes);
+app.use('/user', authenticatieToken, userRoutes);
+app.use('/tweet', authenticatieToken, tweetRoutes);
 app.use('/auth', authRoutes);
 
 app.get('/', (req, res) => {
