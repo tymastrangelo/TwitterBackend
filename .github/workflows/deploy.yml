@@ -1,0 +1,36 @@
+name: Deploy to EC2
+
+# This specifies that the workflow should run on every push to the 'main' branch.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Defines a job named 'deploy'.
+  deploy:
+    # The type of runner that the job will run on.
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checks out your repository under $GITHUB_WORKSPACE, so your workflow can access it.
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      # Sets up SSH access to your EC2 instance.
+      - name: Setup SSH
+        run: |
+          echo "${{ secrets.SSH_KEY }}" | base64 -d > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+          echo "Host *\n\tStrictHostKeyChecking no\n\tIdentityFile /tmp/ssh_key\n" > ~/.ssh/config
+
+      # Deploys your application to EC2.
+      - name: Deploy to EC2
+        run: |
+          ssh -i /tmp/ssh_key ec2-user@ec2-3-92-239-51.compute-1.amazonaws.com << EOF
+          cd TwitterBackend/
+          git pull
+          npm install
+          npm run build
+          pm2 restart all
+          EOF
