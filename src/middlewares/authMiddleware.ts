@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 type AuthRequest = Request & {user?: User} 
 
-export async function authenticatieToken(
+export async function authenticateToken(
     req: AuthRequest, 
     res: Response, 
     next: NextFunction

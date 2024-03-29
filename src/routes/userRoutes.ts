@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { PrismaClient } from '@prisma/client';
-import { authenticatieToken } from "../middlewares/authMiddleware";
+import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -74,21 +74,21 @@ router.delete('/:id', async (req,res) => {
     res.sendStatus(200)
 });
 
-// src/routes/userRoutes.ts
-router.get('/me', authenticatieToken, async (req, res) => {
+router.get('/me', authenticateToken, async (req, res) => {
   if (!req.user) {
-      return res.status(401).json({ error: "User not authenticated" });
+    return res.status(401).json({ error: "User not authenticated" });
   }
-  const userId = req.user.id;
+  const userId = req.user.id; // Ensure this ID is extracted correctly by the middleware
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, username: true }
+    select: { email: true, username: true, name: true } // Add 'name' if you want to include it
   });
   if (!user) {
     return res.status(404).json({ error: "User not found" });
   }
   res.json(user);
 });
+
 
 
 export default router;
