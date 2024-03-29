@@ -4,78 +4,84 @@ import jwt from 'jsonwebtoken';
 
 const router = Router();
 const prisma = new PrismaClient();
-const JWT_SECRET = "SUPER SECRET"; //
+const JWT_SECRET = "SUPER SECRET";
 
 // Tweet CRUD
 
 // Create tweet
-router.post('/', async (req,res) => {
-    const { content, image } = req.body;
-    // @ts-ignore
-    const user = req.user;
+router.post('/', async (req, res) => {
+  const { content, image } = req.body;
 
-    try {
-      const result = await prisma.tweet.create({
-        data: {
-          content,
-          image,
-          userId: user.id, // TODO manage based on the auth user  
-        },
-        include: {user: true},
-      });
+  // Check if the user object exists in the request
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized: No user found" });
+  }
+  
+  // Access userId safely after the check
+  const userId = req.user.id;
 
-      res.json(result);
-    } catch (e) {
-        res.status(400).json({ error: "Username and email should be unique" });
-    }
+  try {
+    const result = await prisma.tweet.create({
+      data: {
+        content,
+        image,
+        userId, // Managed based on the auth user
+      },
+      include: { user: true },
+    });
+
+    res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: "Error creating tweet" });
+  }
 });
 
 // List tweets
-router.get('/', async (req,res) => {
-    const allTweets = await prisma.tweet.findMany({ 
-        orderBy: {
-            createdAt: 'desc', // This line orders tweets by creation time, newest first
+router.get('/', async (req, res) => {
+  const allTweets = await prisma.tweet.findMany({
+    orderBy: {
+      createdAt: 'desc', // This line orders tweets by creation time, newest first
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          image: true
         },
-        include: { 
-            user: { 
-                select: { 
-                    id: true, 
-                    name: true, 
-                    username: true, 
-                    image: true 
-                }, 
-            }, 
-        },
-    });
-    res.json(allTweets);
+      },
+    },
+  });
+  res.json(allTweets);
 });
 
-// get one tweet
-router.get('/:id', async (req,res) => {
-    const { id } = req.params;
-    console.log('Query tweet with id: ', id)
-    const tweet = await prisma.tweet.findUnique({ 
-        where: {id: Number(id)}, 
-        include: { user: true},
-    });
-    if (!tweet) {
-        return res.status(404).json({error: "Tweet not found!"})
-    }
+// Get one tweet
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log('Query tweet with id: ', id);
+  const tweet = await prisma.tweet.findUnique({
+    where: { id: Number(id) },
+    include: { user: true },
+  });
+  if (!tweet) {
+    return res.status(404).json({ error: "Tweet not found!" });
+  }
 
-    res.json(tweet);
+  res.json(tweet);
 });
 
-// update tweet
-router.put('/:id', (req,res) => {
-    const { id } = req.params;
-    res.status(501).json({error: `Not Implemented: ${id}` })
+// Update tweet - Placeholder for future implementation
+router.put('/:id', (req, res) => {
+  const { id } = req.params;
+  res.status(501).json({ error: `Not Implemented: ${id}` });
 });
 
-// delete tweet
-router.delete('/:id', async (req,res) => {
-    const { id } = req.params;
-    await prisma.tweet.delete({ where: {id: Number(id)}});
-    res.sendStatus(200);
+// Delete tweet
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  await prisma.tweet.delete({ where: { id: Number(id) } });
+  res.sendStatus(200);
 });
 
 export default router;
