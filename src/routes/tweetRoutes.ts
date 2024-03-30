@@ -71,6 +71,25 @@ router.get('/:id', async (req, res) => {
   res.json(tweet);
 });
 
+// Increment likes for a tweet
+router.patch('/:id/like', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const tweet = await prisma.tweet.update({
+      where: { id: Number(id) },
+      data: {
+        likes: {
+          increment: 1
+        },
+      },
+    });
+    res.json(tweet);
+  } catch (e) {
+    res.status(400).json({ error: "Error liking tweet" });
+  }
+});
+
+
 // Update tweet - Placeholder for future implementation
 router.put('/:id', (req, res) => {
   const { id } = req.params;

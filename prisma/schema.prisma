@@ -42,4 +42,5 @@ model Tweet {
   impression Int      @default(0)
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
+  likes      Int      @default(0)
 }
