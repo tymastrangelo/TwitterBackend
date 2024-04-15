@@ -96,11 +96,41 @@ router.put('/:id', (req, res) => {
   res.status(501).json({ error: `Not Implemented: ${id}` });
 });
 
-// Delete tweet
+// Delete tweet with ownership check
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  await prisma.tweet.delete({ where: { id: Number(id) } });
-  res.sendStatus(200);
+  const userId = req.user?.id;  // Assuming `req.user` is populated from your auth middleware
+
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized: No user logged in" });
+  }
+
+  try {
+    // First find the tweet to check ownership
+    const tweet = await prisma.tweet.findUnique({
+      where: { id: Number(id) },
+    });
+
+    if (!tweet) {
+      return res.status(404).json({ error: "Tweet not found" });
+    }
+
+    // Check if the logged-in user is the owner of the tweet
+    if (tweet.userId !== userId) {
+      return res.status(403).json({ error: "You can only delete your own tweets" });
+    }
+
+    // Delete the tweet if the user is the owner
+    await prisma.tweet.delete({
+      where: { id: Number(id) },
+    });
+
+    res.sendStatus(200);  // OK status
+  } catch (e) {
+    console.error("Failed to delete tweet:", e);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
+
 
 export default router;

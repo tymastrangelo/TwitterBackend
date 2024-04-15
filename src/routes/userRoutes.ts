@@ -81,7 +81,7 @@ router.get('/me', authenticateToken, async (req, res) => {
   const userId = req.user.id; // Ensure this ID is extracted correctly by the middleware
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, username: true, name: true } // Add 'name' if you want to include it
+    select: { email: true, username: true, name: true, image: true } // Add 'name' if you want to include it
   });
   if (!user) {
     return res.status(404).json({ error: "User not found" });
