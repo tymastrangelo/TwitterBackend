@@ -76,19 +76,16 @@ router.delete('/:id', async (req,res) => {
 
 router.get('/me', authenticateToken, async (req, res) => {
   if (!req.user) {
-    return res.status(401).json({ error: "User not authenticated" });
+      return res.status(401).json({ error: "User not authenticated" });
   }
-  const userId = req.user.id; // Ensure this ID is extracted correctly by the middleware
   const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true, username: true, name: true, image: true } // Add 'name' if you want to include it
+      where: { id: req.user.id },
+      select: { email: true, username: true, name: true, image: true }
   });
   if (!user) {
-    return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
   }
   res.json(user);
 });
-
-
 
 export default router;
