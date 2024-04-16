@@ -76,16 +76,25 @@ router.delete('/:id', async (req,res) => {
 
 router.get('/me', authenticateToken, async (req, res) => {
   if (!req.user) {
-      return res.status(401).json({ error: "User not authenticated" });
+      console.error("Authentication failed: No user attached to request");
+      return res.status(401).json({ error: "Authentication failed: No user attached" });
   }
-  const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: { email: true, username: true, name: true, image: true }
-  });
-  if (!user) {
-      return res.status(404).json({ error: "User not found" });
+  try {
+      const user = await prisma.user.findUnique({
+          where: { id: req.user.id },
+          select: { email: true, username: true, name: true, image: true }
+      });
+      
+      if (!user) {
+          console.error("User retrieval failed: User not found in database");
+          return res.status(404).json({ error: "User not found" });
+      }
+      
+      res.json(user);
+  } catch (error) {
+      console.error("Database operation failed", error);
+      res.status(500).json({ error: "Failed to retrieve user data", details: error.message });
   }
-  res.json(user);
 });
 
 export default router;
