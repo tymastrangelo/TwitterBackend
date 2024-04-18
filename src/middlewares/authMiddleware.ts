@@ -5,7 +5,6 @@ import { PrismaClient, User } from "@prisma/client";
 const JWT_SECRET = process.env.JWT_SECRET || 'SUPER SECRET';
 const prisma = new PrismaClient();
 
-// Extending Request to include user information
 interface AuthRequest extends Request {
     user?: User;
 }
@@ -26,20 +25,28 @@ export async function authenticateToken(req: AuthRequest, res: Response, next: N
             return res.status(401).json({error: 'Invalid token payload'});
         }
 
-        // Find the user based on the user ID (sub in JWT)
+        const userId = parseInt(payload.sub);
+        if (!userId) {
+            return res.status(401).json({error: 'Invalid user ID in token'});
+        }
+
         const user = await prisma.user.findUnique({
-            where: { id: parseInt(payload.sub) }
+            where: { id: userId }
         });
 
         if (!user) {
             return res.status(401).json({error: 'User not found or token does not match any user'});
         }
 
-        // Attach user to request if valid
         req.user = user;
     } catch (e) {
-        console.error("Token verification failed:", e);
-        return res.status(401).json({error: 'Failed to authenticate token', details: e.message});
+        if (e instanceof Error) {
+            console.error("Token verification failed:", e);
+            return res.status(401).json({error: 'Failed to authenticate token', details: e.message});
+        } else {
+            console.error("Token verification failed with non-error type");
+            return res.status(401).json({error: 'Failed to authenticate token', details: 'Unknown error'});
+        }
     }
 
     next();
