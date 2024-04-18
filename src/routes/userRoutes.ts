@@ -87,7 +87,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         });
         
         if (!user) {
-            console.error("User retrieval failed: User not found in database");
+            console.error("User retrieval failed: User not found in database for ID:", req.user.id);
             return res.status(404).json({ error: "User not found" });
         }
         
