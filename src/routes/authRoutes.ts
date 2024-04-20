@@ -33,35 +33,22 @@ router.post('/register', async (req, res) => {
   }
 
   try {
-    // Check if username already exists
-    const existingUsername = await prisma.user.findUnique({
-      where: { username },
-    });
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
     if (existingUsername) {
       return res.status(400).json({ error: "Username already in use" });
     }
 
-    // Create user with email and username
-    const user = await prisma.user.create({
-      data: { email, username, name },
-    });
-
-    const emailToken = generateEmailToken();
-    await prisma.token.create({
-      data: {
-        type: "EMAIL",
-        emailToken,
-        expiration: new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000),
-        user: {
-          connect: { email },
-        },
-      },
-    });
-    await sendEmailToken(email, emailToken);
-
+    await prisma.user.create({ data: { email, username, name } });
     res.status(200).json({ message: "Account created successfully" });
-  } catch (e) {
-    res.status(400).json({ error: "Couldn't create the account" });
+  } catch (error) {
+    // Type guard to check if error is an instance of Error
+    if (error instanceof Error) {
+      console.error('Account creation failed:', error);
+      res.status(400).json({ error: `Couldn't create the account: ${error.message}` });
+    } else {
+      console.error('Account creation failed with unknown error:', error);
+      res.status(400).json({ error: "Couldn't create the account due to an unknown error." });
+    }
   }
 });
 
