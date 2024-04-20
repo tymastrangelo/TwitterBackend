@@ -76,11 +76,12 @@ router.post('/login', async (req, res) => {
       where: { email }
     });
     
+    // If no user exists, return a specific error message prompting registration
     if (!userExists) {
-      return res.status(404).json({ error: "No account associated with this email. Please register first." });
+      return res.status(404).json({ message: "No account associated with this email. Please create an account." });
     }
 
-    // Proceed with the login process
+    // If user exists, proceed with the login process
     const emailToken = generateEmailToken();
     const expiration = new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
     const createdToken = await prisma.token.create({
@@ -95,7 +96,7 @@ router.post('/login', async (req, res) => {
     });
 
     await sendEmailToken(email, emailToken);
-    res.sendStatus(200);
+    res.status(200).send({ message: "Login token sent to your email." });
   } catch (e) {
     console.error("Error during login process:", e);
     res.status(400).json({ error: "Couldn't start the authentication process" });
