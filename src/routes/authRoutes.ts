@@ -29,26 +29,23 @@ router.post('/register', async (req, res) => {
   const { email, username, name } = req.body;
 
   if (!email || !username || !name) {
+    console.log('Validation Failed: Missing fields');
     return res.status(400).json({ error: "Email, username, and name are required" });
   }
 
   try {
     const existingUsername = await prisma.user.findUnique({ where: { username } });
     if (existingUsername) {
+      console.log(`Username already in use: ${username}`);
       return res.status(400).json({ error: "Username already in use" });
     }
 
-    await prisma.user.create({ data: { email, username, name } });
-    res.status(200).json({ message: "Account created successfully" });
+    const newUser = await prisma.user.create({ data: { email, username, name } });
+    console.log('New user created:', newUser);
+    res.status(200).json({ message: "Account created successfully", userId: newUser.id });
   } catch (error) {
-    // Type guard to check if error is an instance of Error
-    if (error instanceof Error) {
-      console.error('Account creation failed:', error);
-      res.status(400).json({ error: `Couldn't create the account: ${error.message}` });
-    } else {
-      console.error('Account creation failed with unknown error:', error);
-      res.status(400).json({ error: "Couldn't create the account due to an unknown error." });
-    }
+    console.error('Account creation failed:', error);
+    res.status(500).json({ error: "Error during account creation process" });
   }
 });
 
