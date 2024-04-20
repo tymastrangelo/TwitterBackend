@@ -59,7 +59,6 @@ router.post('/register', async (req, res) => {
     });
     await sendEmailToken(email, emailToken);
 
-    // Send back a success response or consider auto-generating an auth token
     res.status(200).json({ message: "Account created successfully" });
   } catch (e) {
     res.status(400).json({ error: "Couldn't create the account" });
@@ -71,21 +70,26 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email } = req.body;
 
-  // Generate token
-  const emailToken = generateEmailToken();
-  const expiration = new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
-
   try {
+    // Check if the user with the provided email exists
+    const userExists = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (!userExists) {
+      return res.status(404).json({ error: "No account associated with this email. Please register first." });
+    }
+
+    // Proceed with the login process
+    const emailToken = generateEmailToken();
+    const expiration = new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000);
     const createdToken = await prisma.token.create({
       data: {
         type: "EMAIL",
         emailToken,
         expiration,
         user: {
-          connectOrCreate: {
-            where: { email },
-            create: { email },
-          },
+          connect: { email },
         },
       },
     });
@@ -93,8 +97,8 @@ router.post('/login', async (req, res) => {
     await sendEmailToken(email, emailToken);
     res.sendStatus(200);
   } catch (e) {
-    console.error("Error during authentication process:", e);
-    res.status(400).json({error: "Couldn't start the authentication process"});
+    console.error("Error during login process:", e);
+    res.status(400).json({ error: "Couldn't start the authentication process" });
   }
 });
 
