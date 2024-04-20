@@ -25,23 +25,18 @@ function generateAuthToken(tokenId: number): string {
 }
 
 // register a new account
+// In authRoutes.ts
 router.post('/register', async (req, res) => {
   const { email, username, name } = req.body;
 
-  if (!email || !username || !name) {
-    console.log('Validation Failed: Missing fields');
-    return res.status(400).json({ error: "Email, username, and name are required" });
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+  if (existingUser) {
+    return res.status(400).json({ error: "Email already in use" });
   }
 
+  // Proceed with user creation
   try {
-    const existingUsername = await prisma.user.findUnique({ where: { username } });
-    if (existingUsername) {
-      console.log(`Username already in use: ${username}`);
-      return res.status(400).json({ error: "Username already in use" });
-    }
-
     const newUser = await prisma.user.create({ data: { email, username, name } });
-    console.log('New user created:', newUser);
     res.status(200).json({ message: "Account created successfully", userId: newUser.id });
   } catch (error) {
     console.error('Account creation failed:', error);
