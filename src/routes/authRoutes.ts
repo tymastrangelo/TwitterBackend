@@ -29,18 +29,32 @@ function generateAuthToken(tokenId: number): string {
 router.post('/register', async (req, res) => {
   const { email, username, name } = req.body;
 
-  const existingUser = await prisma.user.findUnique({ where: { email } });
-  if (existingUser) {
-    return res.status(400).json({ error: "Email already in use" });
-  }
-
-  // Proceed with user creation
   try {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already in use" });
+    }
+
     const newUser = await prisma.user.create({ data: { email, username, name } });
-    res.status(200).json({ message: "Account created successfully", userId: newUser.id });
+    const emailToken = generateEmailToken();
+    
+    // Attempt to create a token and send an email
+    await prisma.token.create({
+      data: {
+        type: "EMAIL",
+        emailToken,
+        expiration: new Date(new Date().getTime() + EMAIL_TOKEN_EXPIRATION_MINUTES * 60 * 1000),
+        user: { connect: { email } },
+      },
+    });
+
+    // Attempt to send the email token
+    await sendEmailToken(email, emailToken);
+    res.status(200).json({ message: "Account created successfully. Please check your email to verify your account." });
+
   } catch (error) {
     console.error('Account creation failed:', error);
-    res.status(500).json({ error: "Error during account creation process" });
+    res.status(500).json({ error: "Error during the account creation process. Please try again." });
   }
 });
 
