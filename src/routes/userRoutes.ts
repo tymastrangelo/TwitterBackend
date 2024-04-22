@@ -30,4 +30,21 @@ router.get('/me', async (req, res) => {
     res.json(req.user);
 });
 
+router.put('/updateUsername', async (req, res) => {
+    const { userId, newUsername } = req.body;
+    try {
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: { username: newUsername }
+        });
+        res.status(200).json({ message: 'Username updated successfully', user });
+    } catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'An unknown error occurred' });
+        }
+    }
+});
+
 export default router;
