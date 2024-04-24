@@ -47,4 +47,55 @@ router.put('/updateUsername', async (req, res) => {
     }
 });
 
+router.get('/search', async (req, res) => {
+    const query = req.query.query;
+  
+    if (typeof query !== 'string' || query.trim() === '') {
+      return res.status(400).json({ error: "Query parameter must be a non-empty string" });
+    }
+  
+    try {
+      const results = await prisma.tweet.findMany({
+        where: {
+          OR: [
+            {
+              content: {
+                contains: query,
+                mode: 'insensitive',
+              },
+            },
+            {
+              user: {
+                OR: [
+                  {
+                    username: {
+                      contains: query,
+                      mode: 'insensitive'
+                    },
+                  },
+                  {
+                    name: {
+                      contains: query,
+                      mode: 'insensitive'
+                    },
+                  }
+                ]
+              }
+            }
+          ],
+        },
+        include: {
+          user: true,
+        },
+      });
+      res.json(results);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(500).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'An unknown error occurred' });
+      }
+    }
+  });
+
 export default router;
