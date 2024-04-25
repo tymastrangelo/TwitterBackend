@@ -132,5 +132,24 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.get('/search/:keyword', async (req, res) => {
+  const { keyword } = req.params;
+  try {
+    const tweets = await prisma.tweet.findMany({
+      where: {
+        OR: [
+          { content: { contains: keyword, mode: 'insensitive' } },
+          { user: { username: { contains: keyword, mode: 'insensitive' } } }
+        ]
+      },
+      include: {
+        user: true
+      }
+    });
+    res.json(tweets);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch tweets" });
+  }
+});
 
 export default router;
