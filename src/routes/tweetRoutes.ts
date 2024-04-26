@@ -6,18 +6,29 @@ const router = Router();
 const prisma = new PrismaClient();
 const JWT_SECRET = "SUPER SECRET";
 
-// Tweet CRUD
+// Ensure user is authenticated before processing any requests
+router.use((req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: "Invalid token" });
+  }
+});
 
 // Create tweet
 router.post('/', async (req, res) => {
   const { content, image } = req.body;
 
-  // Check if the user object exists in the request
   if (!req.user) {
     return res.status(401).json({ error: "Unauthorized: No user found" });
   }
   
-  // Access userId safely after the check
   const userId = req.user.id;
 
   try {
@@ -25,11 +36,10 @@ router.post('/', async (req, res) => {
       data: {
         content,
         image,
-        userId, // Managed based on the auth user
+        userId,
       },
       include: { user: true },
     });
-
     res.json(result);
   } catch (e) {
     res.status(400).json({ error: "Error creating tweet" });
@@ -40,17 +50,10 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   const allTweets = await prisma.tweet.findMany({
     orderBy: {
-      createdAt: 'desc', // This line orders tweets by creation time, newest first
+      createdAt: 'desc',
     },
     include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          image: true
-        },
-      },
+      user: true,
     },
   });
   res.json(allTweets);
@@ -59,7 +62,6 @@ router.get('/', async (req, res) => {
 // Get one tweet
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
-  console.log('Query tweet with id: ', id);
   const tweet = await prisma.tweet.findUnique({
     where: { id: Number(id) },
     include: { user: true },
@@ -67,46 +69,65 @@ router.get('/:id', async (req, res) => {
   if (!tweet) {
     return res.status(404).json({ error: "Tweet not found!" });
   }
-
   res.json(tweet);
 });
 
-// Increment likes for a tweet
-router.patch('/:id/like', async (req, res) => {
+// Like a tweet
+router.post('/:id/like', async (req, res) => {
   const { id } = req.params;
+
   try {
-    const tweet = await prisma.tweet.update({
-      where: { id: Number(id) },
-      data: {
-        likes: {
-          increment: 1
-        },
-      },
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        tweetId: Number(id),
+        userId: req.user.id,
+      }
     });
-    res.json(tweet);
-  } catch (e) {
-    res.status(400).json({ error: "Error liking tweet" });
+
+    if (existingLike) {
+      return res.status(400).json({ message: 'Already liked this tweet' });
+    }
+
+    const like = await prisma.like.create({
+      data: {
+        tweetId: Number(id),
+        userId: req.user.id,
+      }
+    });
+
+    return res.json({ message: 'Liked', like });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error liking tweet', details: error });
   }
 });
 
-
-// Update tweet - Placeholder for future implementation
-router.put('/:id', (req, res) => {
+// Unlike a tweet
+router.delete('/:id/unlike', async (req, res) => {
   const { id } = req.params;
-  res.status(501).json({ error: `Not Implemented: ${id}` });
+
+  try {
+    const like = await prisma.like.deleteMany({
+      where: {
+        tweetId: Number(id),
+        userId: req.user.id,
+      }
+    });
+
+    if (like.count === 0) {
+      return res.status(404).json({ message: 'Like not found or already unliked' });
+    }
+
+    return res.json({ message: 'Unliked', like });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error unliking tweet', details: error });
+  }
 });
 
 // Delete tweet with ownership check
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  const userId = req.user?.id;  // Assuming `req.user` is populated from your auth middleware
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized: No user logged in" });
-  }
 
   try {
-    // First find the tweet to check ownership
     const tweet = await prisma.tweet.findUnique({
       where: { id: Number(id) },
     });
@@ -115,43 +136,17 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: "Tweet not found" });
     }
 
-    // Check if the logged-in user is the owner of the tweet
-    if (tweet.userId !== userId) {
+    if (tweet.userId !== req.user.id) {
       return res.status(403).json({ error: "You can only delete your own tweets" });
     }
 
-    // Delete the tweet if the user is the owner
     await prisma.tweet.delete({
       where: { id: Number(id) },
     });
 
-    res.sendStatus(200);  // OK status
+    res.sendStatus(200); // OK status
   } catch (e) {
-    console.error("Failed to delete tweet:", e);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-router.get('/search/:keyword', async (req, res) => {
-  const { keyword } = req.params;
-  console.log("Received search request for:", keyword); // Log the keyword
-  try {
-      const tweets = await prisma.tweet.findMany({
-          where: {
-              OR: [
-                  { content: { contains: keyword, mode: 'insensitive' } },
-                  { user: { username: { contains: keyword, mode: 'insensitive' } } }
-              ]
-          },
-          include: {
-              user: true
-          }
-      });
-      console.log("Search results:", tweets); // Log the results
-      res.json(tweets);
-  } catch (error) {
-      console.error("Error during search:", error); // Log any errors
-      res.status(500).json({ error: "Failed to fetch tweets" });
   }
 });
 
