@@ -71,44 +71,6 @@ router.get('/:id', async (req, res) => {
   res.json(tweet);
 });
 
-// Increment likes for a tweet
-// src/routes/tweetRoutes.ts
-
-router.post('/:id/like', async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user?.id;
-
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized: No user found" });
-  }
-
-  try {
-    const existingLike = await prisma.like.findUnique({
-      where: {
-        tweetId_userId: {  // This will throw an error as shown
-          tweetId: Number(id),
-          userId: userId
-        }
-      }
-    });
-
-    if (existingLike) {
-      return res.status(400).json({ message: 'Already liked this tweet' });
-    }
-
-    const like = await prisma.like.create({
-      data: {
-        tweetId: Number(id),
-        userId: userId
-      }
-    });
-
-    return res.json({ message: 'Liked', like });
-  } catch (error) {
-    return res.status(500).json({ error: 'Error liking tweet', details: error });
-  }
-});
-
 // Update tweet - Placeholder for future implementation
 router.put('/:id', (req, res) => {
   const { id } = req.params;
@@ -173,3 +135,5 @@ router.get('/search/:keyword', async (req, res) => {
       res.status(500).json({ error: "Failed to fetch tweets" });
   }
 });
+
+export default router;
