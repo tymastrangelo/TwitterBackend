@@ -38,22 +38,24 @@ router.post('/', async (req, res) => {
 
 // List tweets
 router.get('/', async (req, res) => {
-  const allTweets = await prisma.tweet.findMany({
-    orderBy: {
-      createdAt: 'desc', // This line orders tweets by creation time, newest first
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          username: true,
-          image: true
-        },
-      },
-    },
-  });
-  res.json(allTweets);
+  try {
+    const allTweets = await prisma.tweet.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: true,
+        likes: {
+          select: {
+            id: true // You can select specific fields from the likes if needed
+          }
+        }
+      }
+    });
+    console.log("Fetched tweets:", allTweets); // Log fetched tweets
+    res.json(allTweets);
+  } catch (error) {
+    console.error("Error fetching tweets:", error); // Improved error logging
+    res.status(500).json({ error: "Failed to fetch tweets" });
+  }
 });
 
 // Get one tweet
