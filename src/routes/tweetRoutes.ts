@@ -43,17 +43,13 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         user: true,
-        likes: {
-          select: {
-            id: true // You can select specific fields from the likes if needed
-          }
-        }
+        _count: { select: { likes: true } } // Correct way to include the count of related records
       }
     });
-    console.log("Fetched tweets:", allTweets); // Log fetched tweets
+    console.log("Fetched tweets with like counts:", allTweets);
     res.json(allTweets);
   } catch (error) {
-    console.error("Error fetching tweets:", error); // Improved error logging
+    console.error("Error fetching tweets:", error);
     res.status(500).json({ error: "Failed to fetch tweets" });
   }
 });

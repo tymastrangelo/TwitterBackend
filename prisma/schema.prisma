@@ -44,6 +44,7 @@ model Tweet {
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
   likes      Like[]
+  likesCount Int      @default(0) // This is a virtual field, calculated on runtime
 }
 
 model Like {
