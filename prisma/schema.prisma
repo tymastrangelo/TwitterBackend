@@ -36,23 +36,22 @@ model Token {
 
 model Tweet {
   id         Int      @id @default(autoincrement())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
   content    String
   image      String?
-  impression Int      @default(0)
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
-  likes      Like[]
-  likesCount Int      @default(0) // This is a virtual field, calculated on runtime
+  likes      Like[]   // Relation to Like model
+
+  @@index([userId], name: "idx_tweet_user")
 }
 
 model Like {
-  id        Int      @id @default(autoincrement())
-  tweetId   Int
-  userId    Int
-  tweet     Tweet    @relation(fields: [tweetId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
+  id       Int    @id @default(autoincrement())
+  tweetId  Int
+  userId   Int
+  tweet    Tweet  @relation(fields: [tweetId], references: [id])
+  user     User   @relation(fields: [userId], references: [id])
 
-  @@unique([tweetId, userId])
+  @@index([tweetId], name: "idx_like_tweet")
+  @@index([userId], name: "idx_like_user")
 }

@@ -43,18 +43,15 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         user: true,
-        likes: {
-          select: { id: true }, // Assuming you want to fetch likes IDs or some indication of likes
-        },
         _count: {
-          select: { likes: true } // This should work if properly supported
+          select: { likes: true } // Assuming the model is set correctly in the schema
         }
       }
     });
     console.log("Fetched tweets with like counts:", allTweets);
     res.json(allTweets.map(tweet => ({
       ...tweet,
-      likeCount: tweet._count.likes // Ensure this transformation aligns with actual data structure
+      likeCount: tweet._count ? tweet._count.likes : 0 // Guard against undefined _count
     })));
   } catch (error) {
     console.error("Error fetching tweets:", error);
