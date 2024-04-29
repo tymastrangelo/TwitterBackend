@@ -43,11 +43,19 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       include: {
         user: true,
-        _count: { select: { likes: true } } // Correct way to include the count of related records
+        likes: {
+          select: { id: true }, // Assuming you want to fetch likes IDs or some indication of likes
+        },
+        _count: {
+          select: { likes: true } // This should work if properly supported
+        }
       }
     });
     console.log("Fetched tweets with like counts:", allTweets);
-    res.json(allTweets);
+    res.json(allTweets.map(tweet => ({
+      ...tweet,
+      likeCount: tweet._count.likes // Ensure this transformation aligns with actual data structure
+    })));
   } catch (error) {
     console.error("Error fetching tweets:", error);
     res.status(500).json({ error: "Failed to fetch tweets" });
