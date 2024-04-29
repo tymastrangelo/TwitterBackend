@@ -27,15 +27,16 @@ router.get('/', async (req, res) => {
 // List tweets
 router.get('/', async (req, res) => {
   try {
+    console.log("Starting to fetch tweets");
     const allTweets = await prisma.tweet.findMany({
       orderBy: { createdAt: 'desc' },
       include: { user: true }
     });
-    console.log("Fetched tweets:", allTweets);
+    console.log("Fetched tweets count:", allTweets.length);
     res.json(allTweets);
   } catch (error) {
     console.error("Error fetching tweets:", error);
-    res.status(500).json({ error: "Failed to fetch tweets" });
+    res.status(500).json({ error: "Failed to fetch tweets", details: error });
   }
 });
 
