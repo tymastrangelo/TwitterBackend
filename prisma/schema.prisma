@@ -19,7 +19,6 @@ model User {
   isVerified Boolean  @default(false)
   tokens     Token[]
   tweets     Tweet[]
-  likes      Like[]
 }
 
 model Token {
@@ -36,22 +35,11 @@ model Token {
 
 model Tweet {
   id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   content    String
   image      String?
+  impression Int      @default(0)
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
-  likes      Like[]   // Relation to Like model
-
-  @@index([userId], name: "idx_tweet_user")
-}
-
-model Like {
-  id       Int    @id @default(autoincrement())
-  tweetId  Int
-  userId   Int
-  tweet    Tweet  @relation(fields: [tweetId], references: [id])
-  user     User   @relation(fields: [userId], references: [id])
-
-  @@index([tweetId], name: "idx_like_tweet")
-  @@index([userId], name: "idx_like_user")
 }
