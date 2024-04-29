@@ -9,20 +9,18 @@ const JWT_SECRET = "SUPER SECRET";
 // Tweet CRUD
 
 // Create tweet
-router.post('/', async (req, res) => {
-  const { content, image } = req.body;
-  if (!req.user) {
-    return res.status(401).json({ error: "Unauthorized: No user found" });
-  }
-  const userId = req.user.id;
+// Assuming we are NOT using a 'likes' column directly
+router.get('/', async (req, res) => {
   try {
-    const result = await prisma.tweet.create({
-      data: { content, image, userId },
-      include: { user: true },
+    const allTweets = await prisma.tweet.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { user: true }  // Ensure no erroneous '_count' or 'likes' here
     });
-    res.json(result);
-  } catch (e) {
-    res.status(400).json({ error: "Error creating tweet" });
+    console.log("Fetched tweets:", allTweets);
+    res.json(allTweets);
+  } catch (error) {
+    console.error("Error fetching tweets:", error);
+    res.status(500).json({ error: "Failed to fetch tweets" });
   }
 });
 
